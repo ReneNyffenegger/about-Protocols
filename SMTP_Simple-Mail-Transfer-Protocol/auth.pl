@@ -2,8 +2,10 @@ use warnings;
 use strict;
 
 use MIME::Base64;
-use IO::Socket::INET;
-use IO::Select;
+
+use lib '..';
+use TCP_Client;
+
 
 my $mailserver        = shift;
 my $port              = shift;
@@ -15,21 +17,10 @@ my $to_mailaddress    = shift;
 my $username_64 = encode_base64($username);
 my $password_64 = encode_base64($password);
 
-my $sock  = new IO::Socket::INET (
-               PeerAddr    => $mailserver,
-               PeerPort    => $port,
-               Proto       => 'tcp',
-               Timeout     =>  1,
-               Blocking    =>  0
-           ) 
-           or die "Could not connect";
+TCP_Client::connect($mailserver, $port);
 
+sleep 0.1;
 
-         sleep 1;
-
-
-my $select = new IO::Select;
-$select -> add($sock);
 
 print_answer();
 
@@ -76,12 +67,12 @@ sub print_and_send {
   print $text_out;
   print "\n";
 
-  $sock -> send($text);
+  TCP_Client::send($text);
 }
 
 sub print_answer {
 
-  my $answer = wait_answer();
+  my $answer = TCP_Client::wait_answer();
 
   $answer =~ s/334 ([^\x0d\x0a]*)/"334 $1" . ' [' . decode_base64($1) . ']'/e;
 
@@ -90,27 +81,4 @@ sub print_answer {
   print "\n";
   print $answer;
   print "\n";
-
-}
-
-sub wait_answer {
-
-  my $ret = '';
-  my $answer_started = 0;
-
-  while (not $answer_started and $sock->connected) {
-    sleep 0.1;
-
-    while ($sock->connected and $select -> can_read) {
-
-      $answer_started = 1;
-
-      my $buf;
-      while ($sock->connected) {
-        $sock -> recv($buf, 10);
-        return $ret unless $buf;
-        $ret .= $buf;
-      }
-    }
-  }
 }

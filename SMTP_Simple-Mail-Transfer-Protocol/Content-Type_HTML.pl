@@ -50,7 +50,7 @@ TCP_Client::send(<<HEADER);
 From: "From Name" <$from_mailaddress>
 To: "To Name" <$to_mailaddress>
 Date: $date
-Subject: Test with Attachment
+Subject: Test with MIME Type html
 Content-Type: text/html
 
 HEADER
